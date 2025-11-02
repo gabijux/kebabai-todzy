@@ -8,6 +8,7 @@ export default function Account() {
         <li><Link href="/account/edit">Redaguoti paskyrą</Link></li>
         <li><Link href="/account/change-password">Slaptažodžio keitimas</Link></li>
         <li><Link href="/account/delete">Paskyros šalinimas</Link></li>
+        <li><Link href="/account/discount-code">Gauti nuolaidos kodą</Link></li>
       </ul>
       <p><Link href="/">Back to Pagrindinis</Link></p>
     </main>
