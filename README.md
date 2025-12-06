@@ -90,3 +90,31 @@ Frontend dev server will run on http://localhost:3000 by default. Calls to `/api
 ---
 
 If you'd like me to add one of the optional packages and wire it up (Swagger, CORS, TypeScript, or a combined dev script), tell me which and I'll add it.
+
+
+
+
+
+MIGRATION STRUCTURE:
+
+dotnet ef migrations add AddKebabTables
+dotnet ef database update
+
+
+
+TEAM WORKFLOW:
+docker compose up -d
+
+dotnet ef database update
+
+docker compose down
+
+
+DBEAVER (postgresql):
+| Field    | Value            |
+| -------- | ---------------- |
+| Host     | localhost        |
+| Port     | 5555             |
+| Database | kebabai_db       |
+| Username | kebabai_user     |
+| Password | kebabai_password |

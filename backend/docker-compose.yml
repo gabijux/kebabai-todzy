@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: kebabai_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: kebabai_user
+      POSTGRES_PASSWORD: kebabai_password
+      POSTGRES_DB: kebabai_db
+    ports:
+      - "5555:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
