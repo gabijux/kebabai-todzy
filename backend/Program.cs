@@ -196,6 +196,45 @@ app.MapPost("/api/users/delete", async (LoginRequest request, AppDbContext db) =
     return Results.Ok(new { message = "Paskyra sėkmingai ištrinta." });
 });
 
+app.MapGet("/api/orders/user/{userId:int}", async (int userId, AppDbContext db) =>
+{
+    var orders = await db.Orders
+        .Where(o => o.UserId == userId)
+        .OrderByDescending(o => o.OrderDate)
+        .Select(o => new
+        {
+            o.Id,
+            o.OrderDate,
+            o.Amount,
+            o.Status
+        })
+        .ToListAsync();
+
+    return Results.Ok(orders);
+});
+
+
+
+app.MapGet("/api/orders/{id:int}", async (int id, AppDbContext db) =>
+{
+    var order = await db.Orders.FindAsync(id);
+
+    if (order is null)
+    {
+        return Results.NotFound(new { error = "Užsakymas nerastas." });
+    }
+
+    return Results.Ok(new
+    {
+        order.Id,
+        order.UserId,
+        order.OrderDate,
+        order.Amount,
+        order.Status
+    });
+});
+
+
 
 app.MapGet("/", () => Results.Redirect("/api/hello"));
 

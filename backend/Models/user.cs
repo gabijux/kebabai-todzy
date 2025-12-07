@@ -22,4 +22,6 @@ public class User
     public UserRole Role { get; set; } = UserRole.Customer;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    public int OrdersCount { get; set; } = 0;
 }
