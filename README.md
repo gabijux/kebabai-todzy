@@ -89,25 +89,26 @@ Frontend dev server will run on http://localhost:3000 by default. Calls to `/api
 
 ---
 
-If you'd like me to add one of the optional packages and wire it up (Swagger, CORS, TypeScript, or a combined dev script), tell me which and I'll add it.
 
 
 
+
+RUTOS:
 
 
 MIGRATION STRUCTURE:
 
-dotnet ef migrations add AddKebabTables
+dotnet ef migrations add _____
 dotnet ef database update
 
 
 
-TEAM WORKFLOW:
+DOCKER WORKFLOW:
+
 docker compose up -d
-
 dotnet ef database update
-
 docker compose down
+
 
 
 DBEAVER (postgresql):

@@ -5,7 +5,7 @@ import { useRouter } from 'next/router'
 export default function PaskyrosLangas() {
 
    const router = useRouter() 
-   
+
   const [user, setUser] = useState(null)
   const [editable, setEditable] = useState(false)
   const [formValues, setFormValues] = useState({
@@ -208,10 +208,24 @@ const handleEditToggle = async () => {
     Paskyros šalinimo langas
   </button>
 
+  <button 
+  onClick={() => router.push('/slaptazodzio-keitimo-langas')}
+  style={{ 
+    background: '#3498db', 
+    color: '#fff',
+    padding: "6px 12px",
+    borderRadius: 8,
+    border: 'none',
+    cursor: 'pointer',
+    marginLeft: 10
+  }}
+>
+  Slaptažodžio keitimo langas
+</button>
+
 
       <ul>
         <li><Link href="/nuolaidos-kodo-generavimo-langas">Nuolaidos kodo generavimo langas</Link></li>
-        <li><Link href="/slaptazodzio-keitimo-langas">Slaptažodžio keitimo langas</Link></li>
       </ul>
 
       <p style={{ marginTop: 30 }}><Link href="/">← Atgal į Pagrindinį langą</Link></p>

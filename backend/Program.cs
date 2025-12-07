@@ -1,6 +1,7 @@
 using BackendApi.Auth;
 using BackendApi.Data;
 using BackendApi.Models;
+using BackendApi.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,9 +9,10 @@ using Microsoft.Extensions.Hosting;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
+builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql
+(builder.Configuration.GetConnectionString("Default")));
 
+builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();
     
 var app = builder.Build();
 
@@ -234,6 +236,70 @@ app.MapGet("/api/orders/{id:int}", async (int id, AppDbContext db) =>
     });
 });
 
+
+app.MapPost("/api/auth/change-password", async (
+    ChangePasswordRequest request,
+    AppDbContext db,
+    IEmailSender emailSender) =>
+{
+    var errors = new List<string>();
+
+    if (string.IsNullOrWhiteSpace(request.Email) ||
+        string.IsNullOrWhiteSpace(request.OldPassword) ||
+        string.IsNullOrWhiteSpace(request.NewPassword) ||
+        string.IsNullOrWhiteSpace(request.ConfirmPassword))
+    {
+        errors.Add("Visi laukai privalomi.");
+    }
+
+    if (request.NewPassword != request.ConfirmPassword)
+    {
+        errors.Add("Naujas slaptažodis ir pakartotas slaptažodis nesutampa.");
+    }
+
+    if (request.NewPassword.Length < 6)
+    {
+        errors.Add("Naujas slaptažodis turi būti bent 6 simbolių.");
+    }
+
+    if (errors.Count > 0)
+    {
+        return Results.BadRequest(new { errors });
+    }
+
+    var emailNorm = request.Email.Trim().ToLowerInvariant();
+
+    var user = await db.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == emailNorm);
+    if (user is null)
+    {
+        return Results.BadRequest(new { errors = new[] { "Naudotojas su tokiu el. paštu nerastas." } });
+    }
+
+    // Patikrinam seną slaptažodį
+    var oldOk = PasswordHelper.VerifyPassword(request.OldPassword, user.PasswordHash);
+    if (!oldOk)
+    {
+      return Results.BadRequest(new { errors = new[] { "Neteisingas senas slaptažodis." } });
+    }
+
+    // --- Sekų diagrama: siuntimas į el. pašto serverį ---
+    var emailOk = await emailSender.SendPasswordChangedEmailAsync(user.Email, user.FirstName);
+
+    if (!emailOk)
+    {
+        // El. pašto serveris gražina "nepavyko" → klaidos pranešimas
+        return Results.BadRequest(new { errors = new[] { "Nepavyko išsiųsti patvirtinimo laiško." } });
+    }
+
+    // Jei laiškas išsiųstas – keičiam slaptažodį DB
+    user.PasswordHash = PasswordHelper.HashPassword(request.NewPassword);
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new
+    {
+        message = "Slaptažodis sėkmingai pakeistas. Patvirtinimo laiškas išsiųstas į jūsų el. paštą."
+    });
+});
 
 
 app.MapGet("/", () => Results.Redirect("/api/hello"));
