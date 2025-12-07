@@ -47,7 +47,8 @@ export default function Home() {
         {/* SHOW LOGGED-IN USER */}
         {user && (
           <p style={{ marginTop: 10, fontSize: 18 }}>
-            Prisijungęs: <strong>{user.firstName} {user.lastName}</strong>
+            Prisijungęs: <strong>{user.firstName} {user.lastName}</strong> <br/>
+            <span style={{ fontSize: 14, color: '#aaa' }}>Rolė: {user.role}</span>
           </p>
         )}
       </header>
@@ -63,7 +64,7 @@ export default function Home() {
           <li style={{ margin: '10px 0' }}><Link href="/artimiausios-kebabines-langas" style={{ color: '#3498db' }}>Artimiausios kebabinės langas</Link></li>
           <li style={{ margin: '10px 0' }}><Link href="/kebabiniu-saraso-langas" style={{ color: '#3498db' }}>Kebabinių sąrašo langas</Link></li>
           <li style={{ margin: '10px 0' }}><Link href="/krepselio-langas" style={{ color: '#3498db' }}>Krepšelio langas</Link></li>
-          <li style={{ margin: '10px 0' }}><Link href="/kebabines-valdymo-langas" style={{ color: '#3498db' }}>Kebabinės valdymo langas</Link></li>
+
         </ul>
       </main>
 

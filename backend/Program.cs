@@ -301,6 +301,54 @@ app.MapPost("/api/auth/change-password", async (
     });
 });
 
+// --- Kebabinių sąrašas ---
+app.MapGet("/api/kebabines", async (AppDbContext db) =>
+{
+    return await db.Kebabines.ToListAsync();
+});
+
+app.MapGet("/api/kebabines/{id:int}", async (int id, AppDbContext db) =>
+{
+    var kebabine = await db.Kebabines.FindAsync(id);
+    return kebabine is not null ? Results.Ok(kebabine) : Results.NotFound();
+});
+
+app.MapPost("/api/kebabines", async (Kebabine kebabine, AppDbContext db) =>
+{
+    db.Kebabines.Add(kebabine);
+    await db.SaveChangesAsync();
+    return Results.Created($"/api/kebabines/{kebabine.Id}", kebabine);
+});
+
+app.MapPut("/api/kebabines/{id:int}", async (int id, Kebabine inputKebabine, AppDbContext db) =>
+{
+    var kebabine = await db.Kebabines.FindAsync(id);
+    if (kebabine is null) return Results.NotFound();
+
+    kebabine.Name = inputKebabine.Name;
+    kebabine.Address = inputKebabine.Address;
+    kebabine.PhoneNumber = inputKebabine.PhoneNumber;
+    kebabine.Email = inputKebabine.Email;
+    kebabine.Rating = inputKebabine.Rating;
+    kebabine.OpeningHours = inputKebabine.OpeningHours;
+    kebabine.City = inputKebabine.City;
+    kebabine.EmployeeCount = inputKebabine.EmployeeCount;
+    kebabine.XCoordinate = inputKebabine.XCoordinate;
+    kebabine.YCoordinate = inputKebabine.YCoordinate;
+
+    await db.SaveChangesAsync();
+    return Results.NoContent();
+});
+
+app.MapDelete("/api/kebabines/{id:int}", async (int id, AppDbContext db) =>
+{
+    var kebabine = await db.Kebabines.FindAsync(id);
+    if (kebabine is null) return Results.NotFound();
+
+    db.Kebabines.Remove(kebabine);
+    await db.SaveChangesAsync();
+    return Results.Ok(new { message = "Kebabinė ištrinta" });
+});
 
 app.MapGet("/", () => Results.Redirect("/api/hello"));
 
