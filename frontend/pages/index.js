@@ -1,6 +1,21 @@
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
 
 export default function Home() {
+
+  const [user, setUser] = useState(null)
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("user")
+      if (stored) {
+        setUser(JSON.parse(stored))
+      }
+    } catch (e) {
+      console.error("Failed to read user from localStorage")
+    }
+  }, [])
+
   const containerStyle = {
     minHeight: '100vh',
     backgroundImage: "url('https://plus.unsplash.com/premium_photo-1661310177352-f586bf23a403?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=2070')",
@@ -28,6 +43,13 @@ export default function Home() {
     <div style={containerStyle}>
       <header>
         <h1>Pagrindinis langas</h1>
+
+        {/* SHOW LOGGED-IN USER */}
+        {user && (
+          <p style={{ marginTop: 10, fontSize: 18 }}>
+            Prisijungęs: <strong>{user.firstName} {user.lastName}</strong>
+          </p>
+        )}
       </header>
 
       <main style={cardStyle}>

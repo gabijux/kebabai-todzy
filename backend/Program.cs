@@ -90,6 +90,44 @@ app.MapPost("/api/auth/register", async (RegisterUserRequest request, AppDbConte
     return Results.Created($"/api/users/{user.Id}", response);
 });
 
+app.MapPost("/api/auth/login", async (LoginRequest request, AppDbContext db) =>
+{
+    var emailNorm = request.Email.Trim().ToLowerInvariant();
+
+    // 1. Patikrinam ar naudotojas egzistuoja
+    var user = await db.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == emailNorm);
+
+    if (user is null)
+    {
+        return Results.BadRequest(new
+        {
+            errors = new[] { "Naudotojas su tokiu el. paštu nerastas." }
+        });
+    }
+
+    // 2. Tikrinam slaptažodį
+    bool validPassword = PasswordHelper.VerifyPassword(request.Password, user.PasswordHash);
+
+    if (!validPassword)
+    {
+        return Results.BadRequest(new
+        {
+            errors = new[] { "Neteisingas slaptažodis." }
+        });
+    }
+
+    // 3. Sukuriam minimalų login sėkmės atsakymą
+    var response = new LoginResponse(
+        user.Id,
+        user.FirstName,
+        user.LastName,
+        user.Email,
+        user.Role.ToString()
+    );
+
+    return Results.Ok(response);
+});
+
 // Root
 app.MapGet("/", () => Results.Redirect("/api/hello"));
 
