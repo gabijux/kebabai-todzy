@@ -7,7 +7,8 @@ public record UserResponse(
     string FirstName,
     string LastName,
     string Email,
-    string Role
+    string Role,
+    int OrdersCount
 )
 {
     public static UserResponse FromEntity(User user) =>
@@ -16,6 +17,7 @@ public record UserResponse(
             user.FirstName,
             user.LastName,
             user.Email,
-            user.Role.ToString()
+            user.Role.ToString(),
+            user.OrdersCount
         );
 }

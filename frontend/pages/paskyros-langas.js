@@ -225,7 +225,25 @@ const handleEditToggle = async () => {
 
 
       <ul>
-        <li><Link href="/nuolaidos-kodo-generavimo-langas">Nuolaidos kodo generavimo langas</Link></li>
+        <li>
+          <button
+            style={{
+              background: '#16a34a',
+              color: '#fff',
+              padding: "6px 12px",
+              borderRadius: 8,
+              border: 'none',
+              cursor: 'pointer'
+            }}
+            onClick={() => {
+              if (user.ordersCount >= 5) {
+                router.push('/nuolaidos-kodo-generavimo-langas')
+              } else {
+                setMessage({ type: 'error', text: 'Nuolaidos kodo generavimas negalimas.' })
+              }
+            }}
+            >Gauti nuolaidos kodą</button>
+        </li>
       </ul>
 
       <p style={{ marginTop: 30 }}><Link href="/">← Atgal į Pagrindinį langą</Link></p>

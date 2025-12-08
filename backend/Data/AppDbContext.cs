@@ -13,6 +13,8 @@ public class AppDbContext : DbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<Kebabine> Kebabines => Set<Kebabine>();
+    public DbSet<Kebabas> Kebabas => Set<Kebabas>();
+    public DbSet<Ingridientas> Ingridientas => Set<Ingridientas>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -62,5 +64,62 @@ public class AppDbContext : DbContext
                 YCoordinate = 21.1443
             }
         );
+        modelBuilder.Entity<Kebabas>().HasData(
+            new Kebabas
+            {
+                Id = 1,
+                Name = "Classic Kebab",
+                Size = KebabasSize.Big,
+                Price = 5.99,
+                Category = "Chicken",
+                Sauce = "Garlic",
+                Calories = 600,
+                Proteins = 30,
+                Fats = 20,
+                Carbohydrates = 70,
+                Spicy = false,
+                Description = "A delicious classic chicken kebab with garlic sauce."
+            },
+            new Kebabas
+            {
+                Id = 2,
+                Name = "Spicy Beef Kebab",
+                Size = KebabasSize.Small,
+                Price = 6.49,
+                Category = "Beef",
+                Sauce = "Spicy",
+                Calories = 700,
+                Proteins = 40,
+                Fats = 25,
+                Carbohydrates = 60,
+                Spicy = true,
+                Description = "A fiery beef kebab for those who love spice."
+            },
+            new Kebabas
+            {
+                Id = 3,
+                Name = "Vegetarian Kebab",
+                Size = KebabasSize.Big,
+                Price = 5.49,
+                Category = "Vegetarian",
+                Sauce = "Yogurt",
+                Calories = 500,
+                Proteins = 15,
+                Fats = 10,
+                Carbohydrates = 80,
+                Spicy = false,
+                Description = "A healthy and tasty vegetarian kebab with yogurt sauce."
+            }
+        );
+        modelBuilder.Entity<Ingridientas>().HasData(
+            new Ingridientas { Id = 1, Name = "Chicken", Category = Category.Other, Amount = 100, Price = 1.5, OutOfDate = DateTime.UtcNow.AddMonths(6) },
+            new Ingridientas { Id = 2, Name = "Beef", Category = Category.Other, Amount = 100, Price = 2, OutOfDate = DateTime.UtcNow.AddMonths(6) },
+            new Ingridientas { Id = 3, Name = "Lettuce", Category = Category.Vegetable, Amount = 50, Price = 0.5, OutOfDate = DateTime.UtcNow.AddMonths(2) },
+            new Ingridientas { Id = 4, Name = "Tomato", Category = Category.Vegetable, Amount = 50, Price = 0.6, OutOfDate = DateTime.UtcNow.AddMonths(2) }
+        );
+        modelBuilder.Entity<Kebabas>()
+            .HasMany(k => k.Ingridientas)
+            .WithMany()
+            .UsingEntity(j => j.ToTable("KebabasIngridientas"));
     }
 }

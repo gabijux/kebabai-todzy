@@ -3,6 +3,7 @@ using System;
 using BackendApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BackendApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251208113306_AddKebabasTable")]
+    partial class AddKebabasTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,73 +24,6 @@ namespace BackendApi.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
-
-            modelBuilder.Entity("BackendApi.Models.Ingridientas", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<double>("Amount")
-                        .HasColumnType("double precision");
-
-                    b.Property<int>("Category")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("OutOfDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<double>("Price")
-                        .HasColumnType("double precision");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Ingridientas");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Amount = 100.0,
-                            Category = 3,
-                            Name = "Chicken",
-                            OutOfDate = new DateTime(2026, 6, 8, 14, 56, 30, 98, DateTimeKind.Utc).AddTicks(3839),
-                            Price = 1.5
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Amount = 100.0,
-                            Category = 3,
-                            Name = "Beef",
-                            OutOfDate = new DateTime(2026, 6, 8, 14, 56, 30, 98, DateTimeKind.Utc).AddTicks(3850),
-                            Price = 2.0
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Amount = 50.0,
-                            Category = 1,
-                            Name = "Lettuce",
-                            OutOfDate = new DateTime(2026, 2, 8, 14, 56, 30, 98, DateTimeKind.Utc).AddTicks(3853),
-                            Price = 0.5
-                        },
-                        new
-                        {
-                            Id = 4,
-                            Amount = 50.0,
-                            Category = 1,
-                            Name = "Tomato",
-                            OutOfDate = new DateTime(2026, 2, 8, 14, 56, 30, 98, DateTimeKind.Utc).AddTicks(3855),
-                            Price = 0.59999999999999998
-                        });
-                });
 
             modelBuilder.Entity("BackendApi.Models.Kebabas", b =>
                 {
@@ -352,21 +288,6 @@ namespace BackendApi.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("IngridientasKebabas", b =>
-                {
-                    b.Property<int>("IngridientasId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("KebabasId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("IngridientasId", "KebabasId");
-
-                    b.HasIndex("KebabasId");
-
-                    b.ToTable("KebabasIngridientas", (string)null);
-                });
-
             modelBuilder.Entity("BackendApi.Models.Order", b =>
                 {
                     b.HasOne("BackendApi.Models.User", "User")
@@ -376,21 +297,6 @@ namespace BackendApi.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("IngridientasKebabas", b =>
-                {
-                    b.HasOne("BackendApi.Models.Ingridientas", null)
-                        .WithMany()
-                        .HasForeignKey("IngridientasId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BackendApi.Models.Kebabas", null)
-                        .WithMany()
-                        .HasForeignKey("KebabasId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

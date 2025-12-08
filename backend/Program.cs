@@ -124,7 +124,8 @@ app.MapPost("/api/auth/login", async (LoginRequest request, AppDbContext db) =>
         user.FirstName,
         user.LastName,
         user.Email,
-        user.Role.ToString()
+        user.Role.ToString(),
+        user.OrdersCount
     );
 
     return Results.Ok(response);
@@ -351,5 +352,156 @@ app.MapDelete("/api/kebabines/{id:int}", async (int id, AppDbContext db) =>
 });
 
 app.MapGet("/", () => Results.Redirect("/api/hello"));
+
+// --- Kebabų sąrašas ---
+app.MapGet("/api/kebabas", async (AppDbContext db) =>
+{
+    return await db.Kebabas.ToListAsync();
+});
+
+app.MapGet("/api/kebabas/{id:int}", async (int id, AppDbContext db) =>
+{
+    var kebab = await db.Kebabas
+        .Include(k => k.Ingridientas)
+        .FirstOrDefaultAsync(k => k.Id == id);
+
+    if (kebab == null) return Results.NotFound();
+
+    return Results.Ok(new
+    {
+        kebab.Id,
+        kebab.Name,
+        kebab.Size,
+        kebab.Price,
+        kebab.Category,
+        kebab.Sauce,
+        kebab.Calories,
+        kebab.Proteins,
+        kebab.Fats,
+        kebab.Carbohydrates,
+        kebab.Spicy,
+        kebab.Description,
+        Ingredients = kebab.Ingridientas.Select(i => new { i.Id, i.Name, i.Category, i.Amount, i.Price })
+    });
+});
+
+app.MapDelete("/api/kebabas/{id:int}", async (int id, AppDbContext db) =>
+{
+    var kebab = await db.Kebabas.FindAsync(id);
+    if (kebab == null) return Results.NotFound();
+
+    db.Kebabas.Remove(kebab);
+    await db.SaveChangesAsync();
+    return Results.Ok(new { message = "Kebabas ištrintas" });
+});
+
+app.MapPut("/api/kebabas/{id:int}", async (int id, Kebabas updatedKebab, AppDbContext db) =>
+{
+    var kebab = await db.Kebabas.FindAsync(id);
+    if (kebab == null) return Results.NotFound();
+
+    kebab.Name = updatedKebab.Name;
+    kebab.Size = updatedKebab.Size;
+    kebab.Price = updatedKebab.Price;
+    kebab.Category = updatedKebab.Category;
+    kebab.Sauce = updatedKebab.Sauce;
+    kebab.Calories = updatedKebab.Calories;
+    kebab.Proteins = updatedKebab.Proteins;
+    kebab.Fats = updatedKebab.Fats;
+    kebab.Carbohydrates = updatedKebab.Carbohydrates;
+    kebab.Spicy = updatedKebab.Spicy;
+    kebab.Description = updatedKebab.Description;
+
+    if (updatedKebab.Ingridientas != null)
+    {
+        // Clear current ingredients
+        kebab.Ingridientas.Clear();
+
+        // Attach new ingredients
+        foreach (var ing in updatedKebab.Ingridientas)
+        {
+            var ingredient = await db.Ingridientas.FindAsync(ing.Id);
+            if (ingredient != null)
+                kebab.Ingridientas.Add(ingredient);
+        }
+    }
+
+    await db.SaveChangesAsync();
+    return Results.Ok(new
+    {
+        kebab.Id,
+        kebab.Name,
+        kebab.Size,
+        kebab.Price,
+        kebab.Category,
+        kebab.Sauce,
+        kebab.Calories,
+        kebab.Proteins,
+        kebab.Fats,
+        kebab.Carbohydrates,
+        kebab.Spicy,
+        kebab.Description,
+        Ingredients = kebab.Ingridientas.Select(i => new { i.Id, i.Name, i.Category, i.Amount, i.Price })
+    });
+});
+
+app.MapPost("/api/kebabas", async (Kebabas newKebab, AppDbContext db) =>
+{
+    var ingredients = new List<Ingridientas>();
+    if (newKebab.Ingridientas != null)
+    {
+        foreach (var ing in newKebab.Ingridientas)
+        {
+            var ingredient = await db.Ingridientas.FindAsync(ing.Id);
+            if (ingredient != null)
+                ingredients.Add(ingredient);
+        }
+        newKebab.Ingridientas = ingredients;
+    }
+    db.Kebabas.Add(newKebab);
+    await db.SaveChangesAsync();
+    return Results.Created($"/api/kebabas/{newKebab.Id}", new
+    {
+        newKebab.Id,
+        newKebab.Name,
+        newKebab.Size,
+        newKebab.Price,
+        newKebab.Category,
+        newKebab.Sauce,
+        newKebab.Calories,
+        newKebab.Proteins,
+        newKebab.Fats,
+        newKebab.Carbohydrates,
+        newKebab.Spicy,
+        newKebab.Description,
+        Ingredients = newKebab.Ingridientas.Select(i => new { i.Id, i.Name, i.Category, i.Amount, i.Price })
+    });
+});
+
+app.MapPost("/api/discounts/generate", async (GenerateDiscountRequest request, AppDbContext db, IEmailSender emailSender) =>
+{
+    var user = await db.Users.FindAsync(request.UserId);
+    if (user is null) return Results.NotFound(new { error = "Naudotojas nerastas." });
+
+    if (user.OrdersCount < 5)
+    {
+        return Results.BadRequest(new { error = "Nuolaidos kodo generuoti galima tik po 5 užsakymų." });
+    }
+
+    var code = "DISCOUNT-" + Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper();
+
+    var emailSent = await emailSender.SendDiscountCodeEmailAsync(user.Email, user.FirstName, code);
+
+    if (!emailSent)
+    {
+        return Results.BadRequest(new { error = "Nepavyko išsiųsti nuolaidos kodo el. paštu." });
+    }
+
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new { code, message = "Nuolaidos kodas sugeneruotas ir išsiųstas į jūsų el. paštą." });
+});
+
+app.MapGet("/api/ingredients", async (AppDbContext db) => await db.Ingridientas.ToListAsync());
 
 app.Run();

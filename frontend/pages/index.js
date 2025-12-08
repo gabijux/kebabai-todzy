@@ -49,6 +49,7 @@ export default function Home() {
           <p style={{ marginTop: 10, fontSize: 18 }}>
             Prisijungęs: <strong>{user.firstName} {user.lastName}</strong> <br/>
             <span style={{ fontSize: 14, color: '#aaa' }}>Rolė: {user.role}</span>
+            <span style={{ fontSize: 14, color: '#aaa' }}> | Užsakymų skaičius: {user.ordersCount}</span>
           </p>
         )}
       </header>
