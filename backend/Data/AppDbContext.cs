@@ -16,6 +16,8 @@ public class AppDbContext : DbContext
     public DbSet<Kebabine> Kebabines => Set<Kebabine>();
     public DbSet<Kebabas> Kebabas => Set<Kebabas>();
     public DbSet<Ingridientas> Ingridientas => Set<Ingridientas>();
+    public DbSet<Cart> Carts => Set<Cart>();
+    public DbSet<CartItem> CartItems => Set<CartItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -122,5 +124,49 @@ public class AppDbContext : DbContext
             .HasMany(k => k.Ingridientas)
             .WithMany()
             .UsingEntity(j => j.ToTable("KebabasIngridientas"));
+
+        modelBuilder.Entity<Cart>()
+            .HasMany(c => c.Items)
+            .WithOne(i => i.Cart)
+            .HasForeignKey(i => i.CartId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<CartItem>()
+            .HasOne(ci => ci.Kebabas)
+            .WithMany()
+            .HasForeignKey(ci => ci.KebabasId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<OrderItem>()
+            .HasOne(oi => oi.Kebabas)
+            .WithMany()
+            .HasForeignKey(oi => oi.KebabasId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Order>()
+            .HasMany(o => o.Items)
+            .WithOne(oi => oi.Order)
+            .HasForeignKey(oi => oi.OrderId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Seed a sample cart and item for development/testing
+        modelBuilder.Entity<Cart>().HasData(
+            new Cart
+            {
+                Id = 1,
+                CreatedAt = DateTime.UtcNow,
+                UserId = null
+            }
+        );
+
+        modelBuilder.Entity<CartItem>().HasData(
+            new CartItem
+            {
+                Id = 1,
+                CartId = 1,
+                KebabasId = 1,
+                Quantity = 2
+            }
+        );
     }
 }

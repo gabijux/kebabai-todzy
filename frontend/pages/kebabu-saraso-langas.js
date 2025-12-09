@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
+import { addToCart as addToLocalCart } from '../utils/cart'
 import { useRouter } from 'next/router'
 
 export default function KebabuSarasoLangas() {
@@ -36,9 +37,10 @@ export default function KebabuSarasoLangas() {
   const categories = ['all', ...new Set(kebabai.map(k => k.category))]
 
   const filteredKebabai = kebabai.filter(kebabas => {
-    const matchesSearch =
-      kebabas.name.toLowerCase().includes(filter.toLowerCase()) ||
-      kebabas.description.toLowerCase().includes(filter.toLowerCase())
+    const name = (kebabas.name || '').toLowerCase()
+    const desc = (kebabas.description || '').toLowerCase()
+    const q = filter.toLowerCase()
+    const matchesSearch = name.includes(q) || desc.includes(q)
     const matchesCategory = categoryFilter === 'all' || kebabas.category === categoryFilter
     return matchesSearch && matchesCategory
   })
@@ -69,7 +71,11 @@ export default function KebabuSarasoLangas() {
 
   return (
     <main style={{ padding: 20 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
+
+      <div style={{
+        display: 'flex', justifyContent: 'space-between',
+        alignItems: 'center', flexWrap: 'wrap'
+      }}>
         <h1>Kebabų sąrašas</h1>
 
         {isAdmin && (
@@ -88,7 +94,9 @@ export default function KebabuSarasoLangas() {
       </div>
 
       <div style={{ marginBottom: 20 }}>
-        <Link href="/" style={{ color: '#3498db', textDecoration: 'none' }}>← Atgal į Pagrindinį langą</Link>
+        <Link href="/" style={{ color: '#3498db', textDecoration: 'none' }}>
+          ← Atgal į Pagrindinį langą
+        </Link>
       </div>
 
       {/* Filters */}
@@ -100,9 +108,13 @@ export default function KebabuSarasoLangas() {
           onChange={e => setFilter(e.target.value)}
           style={{ padding: 8, borderRadius: 6, border: '1px solid #ccc', flexGrow: 1, minWidth: 200 }}
         />
-        <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} style={{ padding: 8, borderRadius: 6 }}>
+
+        <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
+          style={{ padding: 8, borderRadius: 6 }}>
           {categories.map(cat => (
-            <option key={cat} value={cat}>{cat === 'all' ? 'Visos kategorijos' : cat}</option>
+            <option key={cat} value={cat}>
+              {cat === 'all' ? 'Visos kategorijos' : cat}
+            </option>
           ))}
         </select>
       </div>
@@ -128,54 +140,114 @@ export default function KebabuSarasoLangas() {
               onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
             >
               <div style={{ padding: 15 }}>
-                <h3 style={{ marginBottom: 8 }}>{k.name} {k.spicy && <span title="Aštrus">🌶️</span>}</h3>
-                <p style={{ fontSize: 14, color: '#555', minHeight: 40 }}>{k.description}</p>
+                <h3 style={{ marginBottom: 8 }}>
+                  {k.name} {k.spicy && <span title="Aštrus">🌶️</span>}
+                </h3>
 
-                <div style={{ display: 'flex', gap: 6, margin: '10px 0', flexWrap: 'wrap' }}>
-                  <span style={{ backgroundColor: '#3498db', color: '#fff', borderRadius: 6, padding: '2px 6px', fontSize: 12 }}>
+                <p style={{ fontSize: 14, color: '#555', minHeight: 40 }}>
+                  {k.description}
+                </p>
+
+                <div style={{
+                  display: 'flex', gap: 6, margin: '10px 0', flexWrap: 'wrap'
+                }}>
+                  <span style={{
+                    backgroundColor: '#3498db', color: '#fff',
+                    borderRadius: 6, padding: '2px 6px', fontSize: 12
+                  }}>
                     {k.category}
                   </span>
-                  <span style={{ backgroundColor: '#9b59b6', color: '#fff', borderRadius: 6, padding: '2px 6px', fontSize: 12 }}>
+
+                  <span style={{
+                    backgroundColor: '#9b59b6', color: '#fff',
+                    borderRadius: 6, padding: '2px 6px', fontSize: 12
+                  }}>
                     {getSizeLabel(k.size)}
                   </span>
                 </div>
 
-                <p style={{ fontWeight: 'bold', fontSize: 16, color: '#e67e22' }}>€{k.price.toFixed(2)}</p>
+                <p style={{ fontWeight: 'bold', fontSize: 16, color: '#e67e22' }}>
+                  €{k.price.toFixed(2)}
+                </p>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
-                  <Link href={`/kebabo-perziuros-langas?id=${k.id}`} style={{ color: '#3498db', fontWeight: 'bold' }}>Peržiūrėti</Link>
+                <div style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10
+                }}>
+                  <Link href={`/kebabo-perziuros-langas?id=${k.id}`} style={{ color: '#3498db', fontWeight: 'bold' }}>
+                    Peržiūrėti
+                  </Link>
 
-                  {isAdmin && (
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <Link href={`/kebabo-valdymo-langas?id=${k.id}`} style={{
-                        color: 'white',
-                        backgroundColor: '#f39c12',
-                        padding: '5px 10px',
-                        borderRadius: 6,
-                        textDecoration: 'none',
-                        fontSize: 12
-                      }}>
-                        Redaguoti
-                      </Link>
-                      <button onClick={() => handleDelete(k.id)} style={{
-                        color: 'white',
-                        backgroundColor: '#e74c3c',
-                        padding: '5px 10px',
-                        borderRadius: 6,
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontSize: 12
-                      }}>
-                        Ištrinti
-                      </button>
-                    </div>
-                  )}
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <button
+                      onClick={async () => {
+                        addToLocalCart(k)
+
+                        try {
+                          const stored = localStorage.getItem('user')
+                          const parsed = stored ? JSON.parse(stored) : null
+                          const userId = parsed?.id ?? parsed?.Id ?? parsed?.userId ?? null
+
+                          if (userId) {
+                            await fetch('/api/cart/add', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ UserId: userId, KebabasId: k.id })
+                            })
+                          }
+                        } catch (e) {
+                          console.error('Failed to persist cart to server', e)
+                        }
+
+                        alert('Pridėta į krepšelį')
+                      }}
+                      style={{
+                        backgroundColor: '#27ae60', color: 'white',
+                        border: 'none', padding: '6px 10px',
+                        borderRadius: 6, cursor: 'pointer'
+                      }}
+                    >
+                      Pridėti į krepšelį
+                    </button>
+
+                    {isAdmin && (
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <Link href={`/kebabo-valdymo-langas?id=${k.id}`}
+                          style={{
+                            color: 'white',
+                            backgroundColor: '#f39c12',
+                            padding: '5px 10px',
+                            borderRadius: 6,
+                            textDecoration: 'none',
+                            fontSize: 12
+                          }}>
+                          Redaguoti
+                        </Link>
+
+                        <button
+                          onClick={() => handleDelete(k.id)}
+                          style={{
+                            color: 'white',
+                            backgroundColor: '#e74c3c',
+                            padding: '5px 10px',
+                            borderRadius: 6,
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontSize: 12
+                          }}
+                        >
+                          Ištrinti
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
+
               </div>
             </div>
           ))}
         </div>
       )}
+
     </main>
   )
 }

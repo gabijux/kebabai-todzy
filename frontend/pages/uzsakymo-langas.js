@@ -1,35 +1,49 @@
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
+import { getCart, clearCart } from '../utils/cart'
 
 export default function UzsakymoLangas() {
   const router = useRouter()
   const { id } = router.query
 
   const [order, setOrder] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  useEffect(() => {
-    if (!id) return
+  // Review state
+  const [cart, setCart] = useState({ items: [], createdAt: null })
+  const [discountCode, setDiscountCode] = useState('')
+  const [discountPercent, setDiscountPercent] = useState(0)
+  const [processing, setProcessing] = useState(false)
+  const [showCardModal, setShowCardModal] = useState(false)
+  const [cardNumber, setCardNumber] = useState('')
+  const [cardError, setCardError] = useState('')
 
-    const fetchOrder = async () => {
-      try {
-        const res = await fetch(`/api/orders/${id}`)
-        if (!res.ok) {
-          throw new Error('Užsakymas nerastas')
+  useEffect(() => {
+    if (id) {
+      // show existing order
+      const fetchOrder = async () => {
+        setLoading(true)
+        try {
+          const res = await fetch(`/api/orders/${id}`)
+          if (!res.ok) throw new Error('Užsakymas nerastas')
+          const data = await res.json()
+          setOrder(data)
+        } catch (err) {
+          console.error(err)
+          setError('Nepavyko gauti užsakymo informacijos.')
+        } finally {
+          setLoading(false)
         }
-        const data = await res.json()
-        setOrder(data)
-      } catch (err) {
-        console.error(err)
-        setError('Nepavyko gauti užsakymo informacijos.')
-      } finally {
-        setLoading(false)
       }
+      fetchOrder()
+      return
     }
 
-    fetchOrder()
+    // otherwise prepare order review from cart
+    const local = getCart()
+    setCart(local)
   }, [id])
 
   const pageStyle = {

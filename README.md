@@ -119,3 +119,9 @@ DBEAVER (postgresql):
 | Database | kebabai_db       |
 | Username | kebabai_user     |
 | Password | kebabai_password |
+
+
+
+Gabijos:
+Stripe API: dotnet add package Stripe.net
+*Environment Variables Needed*

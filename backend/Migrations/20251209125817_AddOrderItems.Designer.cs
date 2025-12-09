@@ -3,6 +3,7 @@ using System;
 using BackendApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BackendApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251209125817_AddOrderItems")]
+    partial class AddOrderItems
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -118,7 +121,7 @@ namespace BackendApi.Migrations
                             Amount = 100.0,
                             Category = 3,
                             Name = "Chicken",
-                            OutOfDate = new DateTime(2026, 6, 9, 12, 8, 42, 95, DateTimeKind.Utc).AddTicks(1127),
+                            OutOfDate = new DateTime(2026, 6, 9, 12, 58, 16, 678, DateTimeKind.Utc).AddTicks(7644),
                             Price = 1.5
                         },
                         new
@@ -127,7 +130,7 @@ namespace BackendApi.Migrations
                             Amount = 100.0,
                             Category = 3,
                             Name = "Beef",
-                            OutOfDate = new DateTime(2026, 6, 9, 12, 8, 42, 95, DateTimeKind.Utc).AddTicks(1147),
+                            OutOfDate = new DateTime(2026, 6, 9, 12, 58, 16, 678, DateTimeKind.Utc).AddTicks(7655),
                             Price = 2.0
                         },
                         new
@@ -136,7 +139,7 @@ namespace BackendApi.Migrations
                             Amount = 50.0,
                             Category = 1,
                             Name = "Lettuce",
-                            OutOfDate = new DateTime(2026, 2, 9, 12, 8, 42, 95, DateTimeKind.Utc).AddTicks(1152),
+                            OutOfDate = new DateTime(2026, 2, 9, 12, 58, 16, 678, DateTimeKind.Utc).AddTicks(7656),
                             Price = 0.5
                         },
                         new
@@ -145,7 +148,7 @@ namespace BackendApi.Migrations
                             Amount = 50.0,
                             Category = 1,
                             Name = "Tomato",
-                            OutOfDate = new DateTime(2026, 2, 9, 12, 8, 42, 95, DateTimeKind.Utc).AddTicks(1157),
+                            OutOfDate = new DateTime(2026, 2, 9, 12, 58, 16, 678, DateTimeKind.Utc).AddTicks(7657),
                             Price = 0.59999999999999998
                         });
                 });
@@ -487,9 +490,9 @@ namespace BackendApi.Migrations
             modelBuilder.Entity("BackendApi.Models.OrderItem", b =>
                 {
                     b.HasOne("BackendApi.Models.Kebabas", "Kebabas")
-                        .WithMany("OrderItems")
+                        .WithMany()
                         .HasForeignKey("KebabasId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("BackendApi.Models.Order", "Order")
@@ -518,9 +521,9 @@ namespace BackendApi.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("BackendApi.Models.Kebabas", b =>
+            modelBuilder.Entity("BackendApi.Models.Cart", b =>
                 {
-                    b.Navigation("OrderItems");
+                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("BackendApi.Models.Order", b =>
