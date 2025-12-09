@@ -3,6 +3,7 @@ using System;
 using BackendApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BackendApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251209090223_AddCartTables")]
+    partial class AddCartTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -39,13 +42,6 @@ namespace BackendApi.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Carts");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            CreatedAt = new DateTime(2025, 12, 9, 12, 58, 16, 680, DateTimeKind.Utc).AddTicks(7322)
-                        });
                 });
 
             modelBuilder.Entity("BackendApi.Models.CartItem", b =>
@@ -72,15 +68,6 @@ namespace BackendApi.Migrations
                     b.HasIndex("KebabasId");
 
                     b.ToTable("CartItems");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            CartId = 1,
-                            KebabasId = 1,
-                            Quantity = 2
-                        });
                 });
 
             modelBuilder.Entity("BackendApi.Models.Ingridientas", b =>
@@ -118,7 +105,7 @@ namespace BackendApi.Migrations
                             Amount = 100.0,
                             Category = 3,
                             Name = "Chicken",
-                            OutOfDate = new DateTime(2026, 6, 9, 12, 58, 16, 678, DateTimeKind.Utc).AddTicks(7644),
+                            OutOfDate = new DateTime(2026, 6, 9, 9, 2, 23, 133, DateTimeKind.Utc).AddTicks(1107),
                             Price = 1.5
                         },
                         new
@@ -127,7 +114,7 @@ namespace BackendApi.Migrations
                             Amount = 100.0,
                             Category = 3,
                             Name = "Beef",
-                            OutOfDate = new DateTime(2026, 6, 9, 12, 58, 16, 678, DateTimeKind.Utc).AddTicks(7655),
+                            OutOfDate = new DateTime(2026, 6, 9, 9, 2, 23, 133, DateTimeKind.Utc).AddTicks(1117),
                             Price = 2.0
                         },
                         new
@@ -136,7 +123,7 @@ namespace BackendApi.Migrations
                             Amount = 50.0,
                             Category = 1,
                             Name = "Lettuce",
-                            OutOfDate = new DateTime(2026, 2, 9, 12, 58, 16, 678, DateTimeKind.Utc).AddTicks(7656),
+                            OutOfDate = new DateTime(2026, 2, 9, 9, 2, 23, 133, DateTimeKind.Utc).AddTicks(1118),
                             Price = 0.5
                         },
                         new
@@ -145,7 +132,7 @@ namespace BackendApi.Migrations
                             Amount = 50.0,
                             Category = 1,
                             Name = "Tomato",
-                            OutOfDate = new DateTime(2026, 2, 9, 12, 58, 16, 678, DateTimeKind.Utc).AddTicks(7657),
+                            OutOfDate = new DateTime(2026, 2, 9, 9, 2, 23, 133, DateTimeKind.Utc).AddTicks(1119),
                             Price = 0.59999999999999998
                         });
                 });
@@ -369,32 +356,6 @@ namespace BackendApi.Migrations
                     b.ToTable("Orders");
                 });
 
-            modelBuilder.Entity("BackendApi.Models.OrderItem", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("KebabasId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("OrderId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("KebabasId");
-
-                    b.HasIndex("OrderId");
-
-                    b.ToTable("OrderItems");
-                });
-
             modelBuilder.Entity("BackendApi.Models.User", b =>
                 {
                     b.Property<int>("Id")
@@ -484,25 +445,6 @@ namespace BackendApi.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("BackendApi.Models.OrderItem", b =>
-                {
-                    b.HasOne("BackendApi.Models.Kebabas", "Kebabas")
-                        .WithMany()
-                        .HasForeignKey("KebabasId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("BackendApi.Models.Order", "Order")
-                        .WithMany("Items")
-                        .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Kebabas");
-
-                    b.Navigation("Order");
-                });
-
             modelBuilder.Entity("IngridientasKebabas", b =>
                 {
                     b.HasOne("BackendApi.Models.Ingridientas", null)
@@ -519,11 +461,6 @@ namespace BackendApi.Migrations
                 });
 
             modelBuilder.Entity("BackendApi.Models.Cart", b =>
-                {
-                    b.Navigation("Items");
-                });
-
-            modelBuilder.Entity("BackendApi.Models.Order", b =>
                 {
                     b.Navigation("Items");
                 });

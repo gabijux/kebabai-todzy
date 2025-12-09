@@ -22,5 +22,8 @@ namespace BackendApi.Models
         // Pvz.: "Completed", "Cancelled", "Pending"
         [MaxLength(50)]
         public string Status { get; set; } = "Completed";
+
+        // Order items
+        public List<OrderItem> Items { get; set; } = new List<OrderItem>();
     }
 }

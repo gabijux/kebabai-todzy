@@ -3,6 +3,7 @@ using BackendApi.Data;
 using BackendApi.Models;
 using BackendApi.Services;
 using Microsoft.AspNetCore.Builder;
+using Stripe;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -13,6 +14,12 @@ builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql
 (builder.Configuration.GetConnectionString("Default")));
 
 builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();
+// Configure Stripe API key from configuration or environment variable
+var stripeKey = builder.Configuration["Stripe:SecretKey"] ?? Environment.GetEnvironmentVariable("STRIPE_SECRET_KEY");
+if (!string.IsNullOrEmpty(stripeKey))
+{
+    StripeConfiguration.ApiKey = stripeKey;
+}
     
 var app = builder.Build();
 
@@ -220,7 +227,10 @@ app.MapGet("/api/orders/user/{userId:int}", async (int userId, AppDbContext db) 
 
 app.MapGet("/api/orders/{id:int}", async (int id, AppDbContext db) =>
 {
-    var order = await db.Orders.FindAsync(id);
+    var order = await db.Orders
+        .Include(o => o.Items)
+        .ThenInclude(oi => oi.Kebabas)
+        .FirstOrDefaultAsync(o => o.Id == id);
 
     if (order is null)
     {
@@ -233,7 +243,8 @@ app.MapGet("/api/orders/{id:int}", async (int id, AppDbContext db) =>
         order.UserId,
         order.OrderDate,
         order.Amount,
-        order.Status
+        order.Status,
+        Items = order.Items.Select(i => new { i.Id, i.KebabasId, i.Quantity, Kebabas = i.Kebabas == null ? null : new { i.Kebabas.Id, i.Kebabas.Name, i.Kebabas.Price } })
     });
 });
 
@@ -393,6 +404,263 @@ app.MapDelete("/api/kebabas/{id:int}", async (int id, AppDbContext db) =>
     db.Kebabas.Remove(kebab);
     await db.SaveChangesAsync();
     return Results.Ok(new { message = "Kebabas ištrintas" });
+});
+
+// --- Cart endpoints ---
+app.MapPost("/api/cart/add", async (AddToCartRequest request, AppDbContext db) =>
+{
+    // Find existing cart for user if userId provided
+    Cart? cart = null;
+    if (request.UserId.HasValue)
+    {
+        cart = await db.Carts
+            .Include(c => c.Items)
+            .FirstOrDefaultAsync(c => c.UserId == request.UserId.Value);
+    }
+
+    if (cart == null)
+    {
+        cart = new Cart { UserId = request.UserId, CreatedAt = DateTime.UtcNow };
+        db.Carts.Add(cart);
+        await db.SaveChangesAsync();
+        // reload with items
+        cart = await db.Carts.Include(c => c.Items).FirstOrDefaultAsync(c => c.Id == cart.Id);
+    }
+
+    var item = cart.Items.FirstOrDefault(i => i.KebabasId == request.KebabasId);
+    if (item != null)
+    {
+        item.Quantity += 1;
+    }
+    else
+    {
+        cart.Items.Add(new CartItem { KebabasId = request.KebabasId, Quantity = 1 });
+    }
+
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new { cart.Id, cart.UserId, cart.CreatedAt, Items = cart.Items.Select(i => new { i.Id, i.KebabasId, i.Quantity }) });
+});
+
+app.MapGet("/api/cart/user/{userId:int}", async (int userId, AppDbContext db) =>
+{
+    var cart = await db.Carts.Include(c => c.Items).ThenInclude(i => i.Kebabas).FirstOrDefaultAsync(c => c.UserId == userId);
+    if (cart == null) return Results.Ok(new { items = new object[0], createdAt = (DateTime?)null });
+
+    // Return kebab metadata (name, price) along with item so frontend can display names
+    var items = cart.Items.Select(i => new
+    {
+        i.Id,
+        i.KebabasId,
+        i.Quantity,
+        name = i.Kebabas != null ? i.Kebabas.Name : null,
+        price = i.Kebabas != null ? i.Kebabas.Price : (double?)null
+    });
+
+    return Results.Ok(new { items = items, createdAt = cart.CreatedAt });
+});
+
+app.MapPost("/api/cart/remove", async (RemoveFromCartRequest request, AppDbContext db) =>
+{
+    if (!request.UserId.HasValue) return Results.BadRequest(new { error = "UserId reikia" });
+
+    var cart = await db.Carts.Include(c => c.Items).FirstOrDefaultAsync(c => c.UserId == request.UserId.Value);
+    if (cart == null) return Results.NotFound(new { error = "Krepšelis nerastas" });
+
+    var item = cart.Items.FirstOrDefault(i => i.KebabasId == request.KebabasId);
+    if (item == null) return Results.NotFound(new { error = "Item nerastas" });
+
+    if (request.RemoveAll)
+    {
+        db.CartItems.Remove(item);
+    }
+    else
+    {
+        item.Quantity -= 1;
+        if (item.Quantity <= 0) db.CartItems.Remove(item);
+    }
+
+    await db.SaveChangesAsync();
+    return Results.Ok(new { message = "Atnaujinta" });
+});
+
+app.MapPost("/api/cart/clear/{userId:int}", async (int userId, AppDbContext db) =>
+{
+    var cart = await db.Carts.Include(c => c.Items).FirstOrDefaultAsync(c => c.UserId == userId);
+    if (cart == null) return Results.Ok(new { message = "Krepšelis jau tuščias" });
+
+    db.CartItems.RemoveRange(cart.Items);
+    db.Carts.Remove(cart);
+    await db.SaveChangesAsync();
+    return Results.Ok(new { message = "Krepšelis išvalytas" });
+});
+
+// Replace server-side cart for a user with provided items
+app.MapPost("/api/cart/replace", async (ReplaceCartRequest request, AppDbContext db) =>
+{
+    try
+    {
+        var userId = request.UserId;
+        var items = request.Items ?? new System.Collections.Generic.List<ReplaceCartItem>();
+
+        var cart = await db.Carts.Include(c => c.Items).FirstOrDefaultAsync(c => c.UserId == userId);
+        if (cart != null)
+        {
+            db.CartItems.RemoveRange(cart.Items);
+            db.Carts.Remove(cart);
+            await db.SaveChangesAsync();
+        }
+
+        var newCart = new Cart { UserId = userId, CreatedAt = DateTime.UtcNow };
+        db.Carts.Add(newCart);
+        await db.SaveChangesAsync();
+
+        if (items.Count > 0)
+        {
+            foreach (var it in items)
+            {
+                var kebId = it.KebabasId;
+                var qty = it.Quantity;
+                db.CartItems.Add(new CartItem { CartId = newCart.Id, KebabasId = kebId, Quantity = qty });
+            }
+            await db.SaveChangesAsync();
+        }
+
+        return Results.Ok(new { message = "Cart replaced" });
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
+});
+
+// Create order from cart or payload
+app.MapPost("/api/orders/create", async (CreateOrderRequest request, AppDbContext db) =>
+{
+    if (!request.UserId.HasValue)
+    {
+        return Results.BadRequest(new { error = "UserId is required to create order." });
+    }
+
+    var user = await db.Users.FindAsync(request.UserId.Value);
+    if (user == null) return Results.NotFound(new { error = "User not found" });
+
+    var order = new Order
+    {
+        UserId = user.Id,
+        OrderDate = DateTime.UtcNow,
+        Amount = request.Amount,
+        Status = "Pending"
+    };
+
+    db.Orders.Add(order);
+
+    // persist order items from request
+    if (request.Items != null && request.Items.Count > 0)
+    {
+        foreach (var it in request.Items)
+        {
+            order.Items.Add(new OrderItem { KebabasId = it.KebabasId, Quantity = it.Quantity });
+        }
+    }
+
+    // increment user's orders count
+    user.OrdersCount += 1;
+
+    // clear user's cart
+    var cart = await db.Carts.Include(c => c.Items).FirstOrDefaultAsync(c => c.UserId == user.Id);
+    if (cart != null)
+    {
+        db.CartItems.RemoveRange(cart.Items);
+        db.Carts.Remove(cart);
+    }
+
+    await db.SaveChangesAsync();
+
+    return Results.Created($"/api/orders/{order.Id}", new { order.Id, order.OrderDate, order.Amount, order.Status });
+});
+
+// Payment endpoint (test-mode). This uses Stripe test payment method to simulate an immediate successful payment.
+app.MapPost("/api/payments/process", async (CreateOrderRequest request, AppDbContext db) =>
+{
+    // Requires Stripe secret key configured
+    if (string.IsNullOrEmpty(StripeConfiguration.ApiKey))
+    {
+        return Results.BadRequest(new { error = "Stripe secret key not configured on server." });
+    }
+
+    if (!request.UserId.HasValue)
+        return Results.BadRequest(new { error = "UserId is required." });
+
+    var user = await db.Users.FindAsync(request.UserId.Value);
+    if (user == null) return Results.NotFound(new { error = "User not found" });
+
+    // Create and immediately confirm a PaymentIntent using a test payment method
+    var amountCents = (long)Math.Round(request.Amount * 100);
+
+    var piService = new PaymentIntentService();
+    try
+    {
+            var options = new PaymentIntentCreateOptions
+            {
+                Amount = amountCents,
+                Currency = "eur",
+                PaymentMethod = "pm_card_visa", // test payment method that simulates success
+                Confirm = true,
+                Description = request.DiscountCode != null ? $"Order payment (discount {request.DiscountCode})" : "Order payment",
+                ReturnUrl = request.ReturnUrl // include return_url to satisfy Stripe requirements for redirect flows
+            };
+
+            var pi = await piService.CreateAsync(options);
+
+            // If further action required (3DS/redirect), return redirect url to frontend so it can navigate the customer.
+            if (pi.Status == "requires_action" && pi.NextAction?.Type == "redirect_to_url")
+            {
+                var redirectUrl = pi.NextAction.RedirectToUrl?.Url;
+                return Results.Ok(new { requiresAction = true, redirectUrl, clientSecret = pi.ClientSecret });
+            }
+
+            if (pi.Status != "succeeded")
+            {
+                return Results.BadRequest(new { error = "Payment failed or requires additional action.", status = pi.Status });
+            }
+    }
+    catch (StripeException ex)
+    {
+        return Results.BadRequest(new { error = "Stripe error: " + ex.Message });
+    }
+
+    // Create order in DB
+    var order = new Order
+    {
+        UserId = user.Id,
+        OrderDate = DateTime.UtcNow,
+        Amount = request.Amount,
+        Status = "Completed"
+    };
+    db.Orders.Add(order);
+    user.OrdersCount += 1;
+
+    // persist order items from request
+    if (request.Items != null && request.Items.Count > 0)
+    {
+        foreach (var it in request.Items)
+        {
+            order.Items.Add(new OrderItem { KebabasId = it.KebabasId, Quantity = it.Quantity });
+        }
+    }
+
+    // Clear user's cart (if exists)
+    var cart = await db.Carts.Include(c => c.Items).FirstOrDefaultAsync(c => c.UserId == user.Id);
+    if (cart != null)
+    {
+        db.CartItems.RemoveRange(cart.Items);
+        db.Carts.Remove(cart);
+    }
+
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new { message = "Payment succeeded and order created", orderId = order.Id });
 });
 
 app.MapPut("/api/kebabas/{id:int}", async (int id, Kebabas updatedKebab, AppDbContext db) =>

@@ -97,6 +97,65 @@ export default function UzsakymuPerziurosLangas() {
                         >
                           Peržiūrėti
                         </button>
+                        <button
+                          onClick={async () => {
+                            // fetch order details (including items) and populate local cart, then redirect to order review
+                            try {
+                              // support both Id and id on order object
+                              const idValue = order.id ?? order.Id
+                              const res = await fetch(`/api/orders/${idValue}`)
+                              if (!res.ok) throw new Error('Nepavyko gauti užsakymo')
+                              const data = await res.json()
+
+                              // normalize items array (case-insensitive property access)
+                              const rawItems = data.items ?? data.Items ?? []
+                              const items = rawItems.map(i => {
+                                const keb = i.kebabas ?? i.Kebabas ?? i.Kebabas ?? i.Kebabas ?? null
+                                const kebId = i.kebabasId ?? i.KebabasId ?? (keb ? (keb.id ?? keb.Id) : null)
+                                const name = keb?.name ?? keb?.Name ?? i.name ?? i.Name ?? 'Kebabas'
+                                const price = keb?.price ?? keb?.Price ?? i.price ?? i.Price ?? null
+                                const quantity = i.quantity ?? i.Quantity ?? 1
+                                return { id: kebId, name, price, quantity }
+                              })
+
+                              const cart = { items, createdAt: new Date().toISOString() }
+                              localStorage.setItem('cart', JSON.stringify(cart))
+
+                              // if user is logged in, try to replace server-side cart too so the cart page won't override local cart with an empty server cart
+                              const storedUser = localStorage.getItem('user')
+                              const parsedUser = storedUser ? JSON.parse(storedUser) : null
+                              const userId = parsedUser?.id ?? parsedUser?.Id ?? parsedUser?.userId ?? null
+                              if (userId) {
+                                try {
+                                  await fetch('/api/cart/replace', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ UserId: userId, Items: items.map(i => ({ KebabasId: i.id, Quantity: i.quantity })) })
+                                  })
+                                } catch (e) {
+                                  console.error('Failed to replace server cart', e)
+                                }
+                              }
+
+                              // Navigate to order review page
+                              router.push('/uzsakymo-langas')
+                            } catch (err) {
+                              console.error(err)
+                              alert('Nepavyko užsakyti vėl')
+                            }
+                          }}
+                          style={{
+                            padding: '6px 10px',
+                            borderRadius: 6,
+                            border: 'none',
+                            cursor: 'pointer',
+                            backgroundColor: '#2ecc71',
+                            color: '#fff',
+                            marginLeft: 8
+                          }}
+                        >
+                          Užsisakyti vėl
+                        </button>
                       </td>
                     </tr>
                   ))}
