@@ -12,7 +12,7 @@ public class AppDbContext : DbContext
 
     public DbSet<User> Users => Set<User>();
     public DbSet<Order> Orders => Set<Order>();
-    public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+    public DbSet<OrderItem> OrderItems { get; set; } = null!;
     public DbSet<Kebabine> Kebabines => Set<Kebabine>();
     public DbSet<Kebabas> Kebabas => Set<Kebabas>();
     public DbSet<Ingridientas> Ingridientas => Set<Ingridientas>();

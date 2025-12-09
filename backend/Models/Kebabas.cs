@@ -1,5 +1,5 @@
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using BackendApi.Models;
 
 namespace BackendApi.Models
 {
@@ -8,6 +8,7 @@ namespace BackendApi.Models
         Small = 0,
         Big = 1
     }
+
     public class Kebabas
     {
         public int Id { get; set; }
@@ -26,5 +27,8 @@ namespace BackendApi.Models
         public string Description { get; set;  } = default!;
 
         public ICollection<Ingridientas> Ingridientas { get; set; } = new List<Ingridientas>();
+
+        // NAUJA: užsakymo eilutės, kuriose naudojamas šis kebabas
+        public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     }
 }

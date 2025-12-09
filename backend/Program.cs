@@ -210,13 +210,26 @@ app.MapGet("/api/orders/user/{userId:int}", async (int userId, AppDbContext db) 
 {
     var orders = await db.Orders
         .Where(o => o.UserId == userId)
+        .Include(o => o.Items)
+            .ThenInclude(oi => oi.Kebabas)
         .OrderByDescending(o => o.OrderDate)
         .Select(o => new
         {
             o.Id,
             o.OrderDate,
             o.Amount,
-            o.Status
+            o.Status,
+            items = o.Items.Select(oi => new
+            {
+                id = oi.KebabasId,
+                name = oi.Kebabas.Name,
+                description = oi.Kebabas.Description,
+                price = oi.Kebabas.Price,        // NAUDOJAM KEbabas.Price
+                category = oi.Kebabas.Category,
+                size = (int?)oi.Kebabas.Size,
+                spicy = oi.Kebabas.Spicy,
+                quantity = oi.Quantity
+            })
         })
         .ToListAsync();
 
@@ -229,7 +242,7 @@ app.MapGet("/api/orders/{id:int}", async (int id, AppDbContext db) =>
 {
     var order = await db.Orders
         .Include(o => o.Items)
-        .ThenInclude(oi => oi.Kebabas)
+            .ThenInclude(oi => oi.Kebabas)
         .FirstOrDefaultAsync(o => o.Id == id);
 
     if (order is null)
@@ -237,15 +250,27 @@ app.MapGet("/api/orders/{id:int}", async (int id, AppDbContext db) =>
         return Results.NotFound(new { error = "Užsakymas nerastas." });
     }
 
-    return Results.Ok(new
+    var result = new
     {
         order.Id,
         order.UserId,
         order.OrderDate,
         order.Amount,
         order.Status,
-        Items = order.Items.Select(i => new { i.Id, i.KebabasId, i.Quantity, Kebabas = i.Kebabas == null ? null : new { i.Kebabas.Id, i.Kebabas.Name, i.Kebabas.Price } })
-    });
+        items = order.Items.Select(oi => new
+        {
+            id = oi.KebabasId,
+            name = oi.Kebabas.Name,
+            description = oi.Kebabas.Description,
+            price = oi.Kebabas.Price,           // NAUDOJAM KEbabas.Price
+            category = oi.Kebabas.Category,
+            size = (int?)oi.Kebabas.Size,
+            spicy = oi.Kebabas.Spicy,
+            quantity = oi.Quantity
+        })
+    };
+
+    return Results.Ok(result);
 });
 
 

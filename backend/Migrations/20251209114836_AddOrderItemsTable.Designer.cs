@@ -3,6 +3,7 @@ using System;
 using BackendApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BackendApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251209114836_AddOrderItemsTable")]
+    partial class AddOrderItemsTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,67 +24,6 @@ namespace BackendApi.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
-
-            modelBuilder.Entity("BackendApi.Models.Cart", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int?>("UserId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Carts");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            CreatedAt = new DateTime(2025, 12, 9, 12, 58, 16, 680, DateTimeKind.Utc).AddTicks(7322)
-                        });
-                });
-
-            modelBuilder.Entity("BackendApi.Models.CartItem", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("CartId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("KebabasId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CartId");
-
-                    b.HasIndex("KebabasId");
-
-                    b.ToTable("CartItems");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            CartId = 1,
-                            KebabasId = 1,
-                            Quantity = 2
-                        });
-                });
 
             modelBuilder.Entity("BackendApi.Models.Ingridientas", b =>
                 {
@@ -118,7 +60,7 @@ namespace BackendApi.Migrations
                             Amount = 100.0,
                             Category = 3,
                             Name = "Chicken",
-                            OutOfDate = new DateTime(2026, 6, 9, 12, 8, 42, 95, DateTimeKind.Utc).AddTicks(1127),
+                            OutOfDate = new DateTime(2026, 6, 9, 11, 48, 34, 299, DateTimeKind.Utc).AddTicks(8964),
                             Price = 1.5
                         },
                         new
@@ -127,7 +69,7 @@ namespace BackendApi.Migrations
                             Amount = 100.0,
                             Category = 3,
                             Name = "Beef",
-                            OutOfDate = new DateTime(2026, 6, 9, 12, 8, 42, 95, DateTimeKind.Utc).AddTicks(1147),
+                            OutOfDate = new DateTime(2026, 6, 9, 11, 48, 34, 299, DateTimeKind.Utc).AddTicks(8992),
                             Price = 2.0
                         },
                         new
@@ -136,7 +78,7 @@ namespace BackendApi.Migrations
                             Amount = 50.0,
                             Category = 1,
                             Name = "Lettuce",
-                            OutOfDate = new DateTime(2026, 2, 9, 12, 8, 42, 95, DateTimeKind.Utc).AddTicks(1152),
+                            OutOfDate = new DateTime(2026, 2, 9, 11, 48, 34, 299, DateTimeKind.Utc).AddTicks(8997),
                             Price = 0.5
                         },
                         new
@@ -145,7 +87,7 @@ namespace BackendApi.Migrations
                             Amount = 50.0,
                             Category = 1,
                             Name = "Tomato",
-                            OutOfDate = new DateTime(2026, 2, 9, 12, 8, 42, 95, DateTimeKind.Utc).AddTicks(1157),
+                            OutOfDate = new DateTime(2026, 2, 9, 11, 48, 34, 299, DateTimeKind.Utc).AddTicks(9002),
                             Price = 0.59999999999999998
                         });
                 });
@@ -386,6 +328,9 @@ namespace BackendApi.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
 
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("decimal(18,2)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("KebabasId");
@@ -452,25 +397,6 @@ namespace BackendApi.Migrations
                     b.HasIndex("KebabasId");
 
                     b.ToTable("KebabasIngridientas", (string)null);
-                });
-
-            modelBuilder.Entity("BackendApi.Models.CartItem", b =>
-                {
-                    b.HasOne("BackendApi.Models.Cart", "Cart")
-                        .WithMany("Items")
-                        .HasForeignKey("CartId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BackendApi.Models.Kebabas", "Kebabas")
-                        .WithMany()
-                        .HasForeignKey("KebabasId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Cart");
-
-                    b.Navigation("Kebabas");
                 });
 
             modelBuilder.Entity("BackendApi.Models.Order", b =>

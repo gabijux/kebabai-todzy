@@ -66,102 +66,145 @@ export default function SlaptazodzioKeitimoLangas() {
     }
   }
 
+  const pageStyle = {
+    padding: 20,
+    minHeight: '100vh',
+    backgroundColor: '#f4f4f4',
+    fontFamily: 'Arial, sans-serif'
+  }
+
+  const centerWrapper = {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    marginTop: 20,
+  }
+
+  const cardStyle = {
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 24,
+    maxWidth: 400,
+    width: '100%',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+  }
+
   const inputStyle = {
     width: '100%',
     padding: 8,
     marginBottom: 12,
     borderRadius: 6,
-    border: '1px solid #555',
-    backgroundColor: '#111',
-    color: '#fff'
+    border: '1px solid #ccc',
+    fontSize: 14
+  }
+
+  const buttonStyle = {
+    width: '100%',
+    padding: '10px 16px',
+    marginTop: 10,
+    cursor: 'pointer',
+    backgroundColor: '#eab308',
+    border: 'none',
+    borderRadius: 8,
+    fontWeight: 'bold',
+    fontSize: 15
   }
 
   return (
-    <main style={{ padding: 20 }}>
+    <main style={pageStyle}>
       <h1>Slaptažodžio keitimo langas</h1>
       <p>Pakeiskite savo slaptažodį</p>
 
-      {errors.length > 0 && (
-        <div style={{ background: '#7f1d1d', padding: 10, borderRadius: 8, color: '#fff', marginTop: 15 }}>
-          <ul style={{ margin: 0, paddingLeft: 18 }}>
-            {errors.map((e, i) => <li key={i}>{e}</li>)}
-          </ul>
+      <div style={centerWrapper}>
+        <div style={cardStyle}>
+          {errors.length > 0 && (
+            <div style={{ 
+              background: '#7f1d1d', 
+              padding: 10, 
+              borderRadius: 8, 
+              color: '#fff', 
+              marginBottom: 12 
+            }}>
+              <ul style={{ margin: 0, paddingLeft: 18 }}>
+                {errors.map((e, i) => <li key={i}>{e}</li>)}
+              </ul>
+            </div>
+          )}
+
+          {message && (
+            <div style={{ 
+              background: '#14532d', 
+              padding: 10, 
+              borderRadius: 8, 
+              color: '#fff', 
+              marginBottom: 12 
+            }}>
+              {message}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit}>
+            <label>El. paštas</label>
+            <input
+              type="email"
+              name="email"
+              style={{
+                ...inputStyle,
+                backgroundColor: '#e5e5e5',
+                color: '#555',
+                cursor: 'not-allowed'
+              }}
+              value={form.email}
+              disabled
+              readOnly
+            />
+
+            <label>Senas slaptažodis</label>
+            <input
+              type="password"
+              name="oldPassword"
+              style={inputStyle}
+              value={form.oldPassword}
+              onChange={handleChange}
+              required
+            />
+
+            <label>Naujas slaptažodis</label>
+            <input
+              type="password"
+              name="newPassword"
+              style={inputStyle}
+              value={form.newPassword}
+              onChange={handleChange}
+              required
+            />
+
+            <label>Pakartokite naują slaptažodį</label>
+            <input
+              type="password"
+              name="confirmPassword"
+              style={inputStyle}
+              value={form.confirmPassword}
+              onChange={handleChange}
+              required
+            />
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              style={buttonStyle}
+            >
+              {isSubmitting ? 'Siunčiama...' : 'Pakeisti slaptažodį'}
+            </button>
+          </form>
         </div>
-      )}
+      </div>
 
-      {message && (
-        <div style={{ background: '#14532d', padding: 10, borderRadius: 8, color: '#fff', marginTop: 15 }}>
-          {message}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} style={{ maxWidth: 400, marginTop: 20 }}>
-        <label>El. paštas</label>
-<input
-  type="email"
-  name="email"
-  style={{
-    ...inputStyle,
-    backgroundColor: '#2a2a2a',
-    color: '#aaa',
-    cursor: 'not-allowed'
-  }}
-  value={form.email}
-  disabled
-  readOnly
-/>
-
-
-        <label>Senas slaptažodis</label>
-        <input
-          type="password"
-          name="oldPassword"
-          style={inputStyle}
-          value={form.oldPassword}
-          onChange={handleChange}
-          required
-        />
-
-        <label>Naujas slaptažodis</label>
-        <input
-          type="password"
-          name="newPassword"
-          style={inputStyle}
-          value={form.newPassword}
-          onChange={handleChange}
-          required
-        />
-
-        <label>Pakartokite naują slaptažodį</label>
-        <input
-          type="password"
-          name="confirmPassword"
-          style={inputStyle}
-          value={form.confirmPassword}
-          onChange={handleChange}
-          required
-        />
-
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          style={{
-            padding: '10px 20px',
-            marginTop: 10,
-            cursor: 'pointer',
-            backgroundColor: '#eab308',
-            border: 'none',
-            borderRadius: 8,
-            fontWeight: 'bold'
-          }}
-        >
-          {isSubmitting ? 'Siunčiama...' : 'Pakeisti slaptažodį'}
-        </button>
-      </form>
-
-      <p style={{ marginTop: 30 }}>
-        <Link href="/paskyros-langas">← Atgal į Paskyros langą</Link>
-      </p>
+      <div style={{ marginTop: 30, textAlign: 'center' }}>
+        <Link href="/paskyros-langas" style={{ color: '#3498db', textDecoration: 'none' }}>
+          ← Atgal į Paskyros langą
+        </Link>
+      </div>
     </main>
   )
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -23,7 +24,7 @@ namespace BackendApi.Models
         [MaxLength(50)]
         public string Status { get; set; } = "Completed";
 
-        // Order items
-        public List<OrderItem> Items { get; set; } = new List<OrderItem>();
+        // NAUJA: užsakymo eilutės (kebabai + kiekiai)
+        public ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
     }
 }

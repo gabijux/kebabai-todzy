@@ -1,17 +1,18 @@
-using System.ComponentModel.DataAnnotations;
-
-namespace BackendApi.Models;
-
-public class OrderItem
+namespace BackendApi.Models
 {
-    [Key]
-    public int Id { get; set; }
+    public class OrderItem
+    {
+        public int Id { get; set; }
 
-    public int OrderId { get; set; }
-    public Order? Order { get; set; }
+        // FK į Order
+        public int OrderId { get; set; }
+        public Order Order { get; set; } = null!;
 
-    public int KebabasId { get; set; }
-    public Kebabas? Kebabas { get; set; }
+        // FK į Kebabas
+        public int KebabasId { get; set; }
+        public Kebabas Kebabas { get; set; } = null!;
 
-    public int Quantity { get; set; }
+        // Kiek kiekvieno kebabo
+        public int Quantity { get; set; }
+    }
 }

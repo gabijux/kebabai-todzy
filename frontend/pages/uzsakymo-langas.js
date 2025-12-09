@@ -46,175 +46,135 @@ export default function UzsakymoLangas() {
     setCart(local)
   }, [id])
 
-  const subtotal = cart.items.reduce((sum, it) => sum + ((it.price || 0) * (it.quantity || 0)), 0)
-  const discountAmount = +(subtotal * (discountPercent / 100)).toFixed(2)
-  const total = +(subtotal - discountAmount).toFixed(2)
-
-  const applyDiscount = () => {
-    // simple demo: DISCOUNT10 -> 10% off
-    if (!discountCode) { setDiscountPercent(0); return }
-    if (discountCode.trim().toUpperCase() === 'DISCOUNT10') {
-      setDiscountPercent(10)
-    } else {
-      setDiscountPercent(0)
-      alert('Neteisingas nuolaidos kodas')
-    }
+  const pageStyle = {
+    padding: 20,
+    minHeight: '100vh',
+    backgroundColor: '#f4f4f4',
+    fontFamily: 'Arial, sans-serif'
   }
 
-  const handlePay = async () => {
-    // Build payload
-    const stored = localStorage.getItem('user')
-    const parsed = stored ? JSON.parse(stored) : null
-    const userId = parsed?.id ?? parsed?.Id ?? parsed?.userId ?? null
-
-    if (!userId) {
-      // For demo require login
-      alert('Prašome prisijungti prieš tęsiant užsakymą')
-      router.push('/prisijungimo-langas')
-      return
-    }
-
-    setProcessing(true)
-    try {
-      const payload = {
-        UserId: userId,
-        Items: cart.items.map(i => ({ KebabasId: i.id, Quantity: i.quantity })),
-        Amount: total,
-        DiscountCode: discountCode || null
-      }
-
-      const payloadWithReturn = { ...payload, ReturnUrl: window.location.origin + '/uzsakymo-langas' }
-
-      const res = await fetch('/api/payments/process', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payloadWithReturn)
-      })
-
-      const data = await res.json()
-
-      if (!res.ok) {
-        const txt = JSON.stringify(data)
-        throw new Error(txt || 'Nepavyko apdoroti apmokėjimo')
-      }
-
-      // If Stripe requires redirect for additional action, redirect the browser
-      if (data.requiresAction && data.redirectUrl) {
-        // navigate user to Stripe's hosted authentication/3DS flow
-        window.location.href = data.redirectUrl
-        return
-      }
-
-      // success: server created order and returned orderId
-      clearCart()
-      router.push(`/uzsakymo-langas?id=${data.orderId || data.id || data.Id}`)
-    } catch (err) {
-      console.error(err)
-      alert('Klaida apdorojant užsakymą')
-    } finally {
-      setProcessing(false)
-    }
+  const centerWrapper = {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    marginTop: 20,
   }
 
-  if (id) {
-    return (
-      <main style={{ padding: 20 }}>
-        <h1>Užsakymo langas</h1>
+  const cardStyle = {
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 24,
+    maxWidth: 900,
+    width: '100%',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+  }
 
-        {loading && <p>Kraunama...</p>}
-        {error && <p style={{ color: 'red' }}>{error}</p>}
+  const itemsGridStyle = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+    gap: 16,
+    marginTop: 16
+  }
 
-        {order && !loading && !error && (
-          <div style={{
-            backgroundColor: '#1a1a1a',
-            padding: 20,
-            borderRadius: 16,
-            maxWidth: 500,
-            marginBottom: 20,
-            color: 'white'
-          }}>
-            <p><strong>Užsakymo ID:</strong> {order.id}</p>
-            <p><strong>Data:</strong> {new Date(order.orderDate).toLocaleString()}</p>
-            <p><strong>Suma:</strong> {order.amount.toFixed(2)} €</p>
-            <p><strong>Būsena:</strong> {order.status}</p>
-          </div>
-        )}
+  const itemCardStyle = {
+    borderRadius: 12,
+    backgroundColor: '#fafafa',
+    border: '1px solid #e5e5e5',
+    padding: 14,
+    boxShadow: '0 2px 6px rgba(0,0,0,0.08)'
+  }
 
-        <p style={{ marginTop: 30 }}>
-          <Link href="/uzsakymu-perziuros-langas">← Atgal į Užsakymų peržiūros langą</Link>
-          {' | '}
-          <Link href="/krepselio-langas">← Atgal į Krepšelio langą</Link>
-        </p>
-      </main>
-    )
+  const badge = (bg) => ({
+    backgroundColor: bg,
+    color: '#fff',
+    borderRadius: 6,
+    padding: '2px 6px',
+    fontSize: 12,
+    marginRight: 6
+  })
+
+  const getSizeLabel = (size) => {
+    if (size === null || size === undefined) return 'Nenustatyta'
+    return size === 0 ? 'Mažas' : 'Didelis'
   }
 
   return (
-    <main style={{ padding: 20 }}>
-      <h1>Užsakymo peržiūra</h1>
+    <main style={pageStyle}>
+      <h1>Užsakymo langas</h1>
 
-      {cart.items.length === 0 && <p>Krepšelis tuščias.</p>}
+      <div style={centerWrapper}>
+        <div style={cardStyle}>
+          {loading && <p>Kraunama...</p>}
+          {error && <p style={{ color: 'red' }}>{error}</p>}
 
-      {cart.items.map(item => (
-        <div key={item.id} style={{ border: '1px solid #ddd', padding: 12, borderRadius: 8, marginBottom: 10 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <div>
-              <h3 style={{ margin: 0 }}>{item.name}</h3>
-              <div>Kiekis: {item.quantity}</div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div>{(item.price || 0).toFixed(2)} €</div>
-              <div style={{ fontWeight: 'bold' }}>{((item.price || 0) * (item.quantity || 0)).toFixed(2)} €</div>
-            </div>
-          </div>
+          {order && !loading && !error && (
+            <>
+              {/* Užsakymo info */}
+              <div style={{ marginBottom: 16 }}>
+                <p><strong>Užsakymo ID:</strong> {order.id}</p>
+                <p><strong>Data:</strong> {new Date(order.orderDate).toLocaleString()}</p>
+                <p><strong>Suma:</strong> {order.amount.toFixed(2)} €</p>
+                <p><strong>Būsena:</strong> {order.status}</p>
+              </div>
+
+              {/* Užsakymo kebabai */}
+              <hr style={{ border: 'none', borderTop: '1px solid #ddd', margin: '16px 0' }} />
+              <h2 style={{ marginTop: 0 }}>Užsakymo kebabai</h2>
+
+              {!order.items || order.items.length === 0 ? (
+                <p>Šiame užsakyme nėra prekių.</p>
+              ) : (
+                <div style={itemsGridStyle}>
+                  {order.items.map(item => (
+                    <div key={item.id} style={itemCardStyle}>
+                      <h3 style={{ margin: '0 0 6px 0' }}>
+                        {item.name} {item.spicy && <span title="Aštrus">🌶️</span>}
+                      </h3>
+                      {item.description && (
+                        <p style={{ fontSize: 14, color: '#555', marginBottom: 8 }}>
+                          {item.description}
+                        </p>
+                      )}
+
+                      <div style={{ marginBottom: 8 }}>
+                        {item.category && (
+                          <span style={badge('#3498db')}>
+                            {item.category}
+                          </span>
+                        )}
+                        <span style={badge('#9b59b6')}>
+                          {getSizeLabel(item.size)}
+                        </span>
+                      </div>
+
+                      <p style={{ margin: 0, fontSize: 14 }}>
+                        Kiekis: <strong>{item.quantity ?? 1}</strong>
+                      </p>
+                      <p style={{ margin: '4px 0 0 0', fontSize: 14 }}>
+                        Kaina už vnt.: <strong>{item.price.toFixed(2)} €</strong>
+                      </p>
+                      <p style={{ margin: '4px 0 0 0', fontSize: 14, color: '#e67e22', fontWeight: 'bold' }}>
+                        Viso už šį kebabą:{' '}
+                        {((item.quantity ?? 1) * item.price).toFixed(2)} €
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
         </div>
-      ))}
-
-      <div style={{ marginTop: 12 }}>
-        <div><strong>Bendra suma:</strong> {subtotal.toFixed(2)} €</div>
-        <div style={{ marginTop: 6 }}>
-          <input type="text" placeholder="Nuolaidos kodas" value={discountCode} onChange={e => setDiscountCode(e.target.value)} style={{ padding: 8, marginRight: 8 }} />
-          <button onClick={applyDiscount} style={{ padding: '8px 12px' }}>Taikyti</button>
-        </div>
-        <div style={{ marginTop: 6 }}><strong>Nuolaida:</strong> {discountPercent}% (-{discountAmount.toFixed(2)} €)</div>
-        <div style={{ marginTop: 6, fontSize: 18 }}><strong>Bendra suma:</strong> {total.toFixed(2)} €</div>
       </div>
 
-      <div style={{ marginTop: 20 }}>
-        <button onClick={() => setShowCardModal(true)} disabled={processing || cart.items.length === 0} style={{ padding: '10px 16px', background: '#27ae60', color: 'white', border: 'none', borderRadius: 6 }}>{processing ? 'Apdorojama...' : 'Mokėti'}</button>
-        <Link href="/krepselio-langas" style={{ marginLeft: 12 }}>← Atgal į Krepšelio langą</Link>
+      <div style={{ marginTop: 30, textAlign: 'center' }}>
+        <Link href="/uzsakymu-perziuros-langas" style={{ color: '#3498db', textDecoration: 'none' }}>
+          ← Atgal į Užsakymų peržiūros langą
+        </Link>
+        {' | '}
+        <Link href="/krepselio-langas" style={{ color: '#3498db', textDecoration: 'none' }}>
+          ← Atgal į Krepšelio langą
+        </Link>
       </div>
-
-      {showCardModal && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: 'white', padding: 20, borderRadius: 8, width: 400, maxWidth: '90%' }}>
-            <h2>Mokėjimas</h2>
-            <p>Įveskite kortelės numerį (test):</p>
-            <input
-              type="text"
-              value={cardNumber}
-              onChange={e => setCardNumber(e.target.value)}
-              placeholder="Kortelės numeris"
-              style={{ width: '100%', padding: 8, marginBottom: 8 }}
-            />
-            {cardError && <div style={{ color: 'red', marginBottom: 8 }}>{cardError}</div>}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-              <button onClick={() => { setShowCardModal(false); setCardError(''); }} style={{ padding: '8px 12px' }}>Atšaukti</button>
-              <button onClick={() => {
-                // validate card number: test value is '42424242'
-                if (cardNumber.trim() === '42424242') {
-                  setCardError('')
-                  setShowCardModal(false)
-                  // proceed with payment
-                  handlePay()
-                } else {
-                  setCardError('Neteisingas kortelės numeris')
-                }
-              }} style={{ padding: '8px 12px', background: '#27ae60', color: 'white', border: 'none', borderRadius: 4 }}>Patvirtinti</button>
-            </div>
-          </div>
-        </div>
-      )}
     </main>
   )
 }
